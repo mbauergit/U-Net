@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+# Standard double convultional network used in down and upsampling
 def double_conv(in_c, out_c):
     return nn.Sequential(
         nn.Conv2d(in_channels=in_c, out_channels=out_c, kernel_size=(3, 3), padding=0),
@@ -9,6 +10,7 @@ def double_conv(in_c, out_c):
         nn.ReLU(inplace=True)
     )
 
+# Function to crop outputs from encoder side to be concatenated to inputs on decoder side
 def crop_image(orig_tensor, target_tensor):
     target_size = target_tensor.size()[-1]
     original_size = orig_tensor.size()[-1]
@@ -42,7 +44,7 @@ class UNet(nn.Module):
         self.last_conv = nn.Conv2d(in_channels=64, out_channels=2, kernel_size=(1, 1), padding=0)
 
     def forward(self, input):
-        #Downsampling
+        # Encoder
         x1 = self.down_conv1(input) #
         x2 = self.max_pool_2x2(x1)
         x2 = self.down_conv2(x2) #
@@ -53,7 +55,7 @@ class UNet(nn.Module):
         x5 = self.max_pool_2x2(x4)
         x5 = self.down_conv5(x5)
 
-        #Upsampling
+        # Decoder
         x6 = self.up_trans1(x5)
         x4 = crop_image(x4, x6)
         x6 = torch.cat((x4, x6), dim=1)
